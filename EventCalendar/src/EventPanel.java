@@ -1,64 +1,67 @@
-import javax.swing.*;
 import java.awt.*;
-import java.time.format.DateTimeFormatter;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
 
+// This panel shows the information for one event.
 public class EventPanel extends JPanel {
-    private Event event;
-    private JButton completeButton;
-    
+    private final Event event;  // The event to show.
+    private JButton completeButton; // Button to mark the event as complete
+
+    // Constructor that sets up the panel.
     public EventPanel(Event event) {
         this.event = event;
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        // Build a text area with event details.
-        StringBuilder details = new StringBuilder("<html>");
-        details.append("<b>").append(event.getName()).append("</b><br/>");
-        details.append("Starts: ").append(event.getDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))).append("<br/>");
-        
-        // If Meeting, add end time, duration, and location.
+        // Show the event name and start time
+        JLabel eventLabel = new JLabel(event.getName() + " at " + event.getDateTime());
+        add(eventLabel);
+
+        // If the event is a meeting, show extra details
         if (event instanceof Meeting) {
-            Meeting m = (Meeting) event;
-            details.append("Ends: ").append(m.getEndDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))).append("<br/>");
-            details.append("Duration: ").append(m.getDuration().toHours()).append(" hour(s)<br/>");
-            details.append("Location: ").append(m.getLocation()).append("<br/>");
+            Meeting meeting = (Meeting) event;
+            JLabel meetingLabel = new JLabel("Duration: " + meeting.getDuration().toMinutes() + " mins, Location: " + meeting.getLocation());
+            add(meetingLabel);
         }
-        // For Deadline, only the start time is shown.
-        details.append("Completed: ").append((event instanceof Completable && ((Completable)event).isComplete()) ? "Yes" : "No").append("<br/>");
-        details.append("</html>");
-        
-        JLabel label = new JLabel(details.toString());
-        add(label, BorderLayout.CENTER);
-        
-        // If the event is completable, add a complete button.
+
+        // If the event can be completed, add a complete button.
         if (event instanceof Completable) {
             completeButton = new JButton("Complete");
-            completeButton.addActionListener(e -> {
-                ((Completable) event).complete();
-                // Refresh the display
-                label.setText(details.toString().replace("No", "Yes"));
-                // Optionally, update background color (urgency) if you add that feature.
+            completeButton.addActionListener((ActionEvent e) -> {
+                ((Completable) event).complete();  // Mark as complete
+                updateDisplay();                   // Update the panel
             });
-            add(completeButton, BorderLayout.EAST);
+            add(completeButton);
         }
         
-        // Update background color based on urgency (optional)
-        updateUrgency();
+        updateUrgency(); // Set the background color
     }
-    
-    // Sets background color based on urgency (red for overdue, yellow for imminent, green for distant).
-    public void updateUrgency() {
-        LocalDateTime now = LocalDateTime.now();
-        if (event.getDateTime().isBefore(now)) {
-            setBackground(Color.PINK); // overdue (red/pink)
-        } else if (event.getDateTime().isBefore(now.plusHours(24))) {
-            setBackground(Color.YELLOW); // imminent
-        } else {
-            setBackground(Color.GREEN); // distant
+
+    // Update the display with current event info
+    public void updateDisplay() {
+        removeAll(); // Clear the panel.
+        JLabel eventLabel = new JLabel(event.getName() + " at " + event.getDateTime());
+        add(eventLabel);
+        if (event instanceof Meeting) {
+            Meeting meeting = (Meeting) event;
+            JLabel meetingLabel = new JLabel("Duration: " + meeting.getDuration().toMinutes() + " mins, Location: " + meeting.getLocation());
+            add(meetingLabel);
         }
+        if (event instanceof Completable) {
+            completeButton = new JButton("Complete");
+            completeButton.addActionListener((ActionEvent e) -> {
+                ((Completable) event).complete();
+                updateDisplay();
+            });
+            add(completeButton);
+        }
+        updateUrgency();
+        revalidate();
+        repaint();
     }
-    
-    public Event getEvent() {
-        return event;
+
+    // Set the background color oif this panel
+    //I like it to light pink
+    public void updateUrgency() {
+        setBackground(new Color(255, 182, 193)); // Light pink.
     }
 }

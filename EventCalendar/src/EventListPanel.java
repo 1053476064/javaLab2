@@ -1,98 +1,50 @@
-import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import javax.swing.*;
 
+// This panel shows the list of events and a button to add new events
 public class EventListPanel extends JPanel {
-    private ArrayList<Event> events;
-    private JPanel controlPanel;
-    private JPanel displayPanel;
-    private JComboBox<String> sortDropDown;
-    private JCheckBox filterComplete;
-    private JCheckBox filterDeadlines;
-    private JCheckBox filterMeetings;
-    private JButton addEventButton;
-    
+    private final java.util.List<Event> events; // List to hold events
+    private final JPanel controlPanel;          // Panel for control buttons
+    private final JPanel displayPanel;          // Panel to display events
+    private final JButton addEventButton;       // Button to add an event
+
+    // Constructor to set up the panel.
     public EventListPanel() {
         events = new ArrayList<>();
         setLayout(new BorderLayout());
-        
-        // Create control panel.
+        setBackground(new Color(245, 245, 245));  // Light gray background
+
+        // Create the control panel and button.
         controlPanel = new JPanel();
-        
-        // Sort drop-down.
-        sortDropDown = new JComboBox<>(new String[] {"Sort by Date", "Sort by Name", "Reverse Date", "Reverse Name"});
-        sortDropDown.addActionListener(e -> sortEvents());
-        controlPanel.add(sortDropDown);
-        
-        // Filter checkboxes.
-        filterComplete = new JCheckBox("Hide Completed");
-        filterDeadlines = new JCheckBox("Hide Deadlines");
-        filterMeetings = new JCheckBox("Hide Meetings");
-        
-        // Add listeners (anonymous class) to update display when filters change.
-        filterComplete.addActionListener(e -> updateDisplay());
-        filterDeadlines.addActionListener(e -> updateDisplay());
-        filterMeetings.addActionListener(e -> updateDisplay());
-        
-        controlPanel.add(filterComplete);
-        controlPanel.add(filterDeadlines);
-        controlPanel.add(filterMeetings);
-        
-        // Add event button.
+        controlPanel.setBackground(new Color(230, 230, 250)); // Light purple background
         addEventButton = new JButton("Add Event");
-        addEventButton.addActionListener(e -> {
-            AddEventModal modal = new AddEventModal((JFrame) SwingUtilities.getWindowAncestor(this), this);
-            modal.setVisible(true);
+        addEventButton.addActionListener((ActionEvent e) -> {
+            // Show the add event dialog when button is clicked
+            new AddEventModal(this);
         });
         controlPanel.add(addEventButton);
-        
         add(controlPanel, BorderLayout.NORTH);
         
-        // Display panel to show events.
+        // Create the panel that displays events
         displayPanel = new JPanel();
+        displayPanel.setBackground(new Color(245, 245, 245)); // Same light gray background
         displayPanel.setLayout(new BoxLayout(displayPanel, BoxLayout.Y_AXIS));
-        JScrollPane scrollPane = new JScrollPane(displayPanel);
-        add(scrollPane, BorderLayout.CENTER);
+        add(new JScrollPane(displayPanel), BorderLayout.CENTER);
     }
-    
-    // Add a new event to the list and update the display.
+
+    // Add an event to the list
     public void addEvent(Event event) {
         events.add(event);
-        updateDisplay();
+        refreshDisplay();
     }
-    
-    // Sort events based on the sort drop-down selection.
-    private void sortEvents() {
-        String selection = (String) sortDropDown.getSelectedItem();
-        if (selection.equals("Sort by Date")) {
-            Collections.sort(events);
-        } else if (selection.equals("Reverse Date")) {
-            Collections.sort(events, Comparator.reverseOrder());
-        } else if (selection.equals("Sort by Name")) {
-            events.sort(Comparator.comparing(Event::getName));
-        } else if (selection.equals("Reverse Name")) {
-            events.sort(Comparator.comparing(Event::getName).reversed());
-        }
-        updateDisplay();
-    }
-    
-    // Update the display panel according to current events and filter selections.
-    public void updateDisplay() {
+
+    // Refresh the display to show all events
+    public void refreshDisplay() {
         displayPanel.removeAll();
         for (Event event : events) {
-            // Apply filters.
-            if (filterComplete.isSelected() && (event instanceof Completable && ((Completable) event).isComplete())) {
-                continue;
-            }
-            if (filterDeadlines.isSelected() && event instanceof Deadline) {
-                continue;
-            }
-            if (filterMeetings.isSelected() && event instanceof Meeting) {
-                continue;
-            }
-            // Add an EventPanel for this event.
+            // Just make sure the file and class name for EventPanel are correct
             displayPanel.add(new EventPanel(event));
         }
         displayPanel.revalidate();

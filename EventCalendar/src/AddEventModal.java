@@ -1,88 +1,85 @@
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 
+// This dialog lets the user add a new event (Deadline or Meeting).
 public class AddEventModal extends JDialog {
-    private JTextField nameField;
-    private JTextField dateTimeField;
-    private JTextField extraField; // For Meeting: end time or location (we use two fields below)
-    private JTextField endTimeField;
-    private JTextField locationField;
-    private JComboBox<String> typeDropDown;
-    private JButton addButton;
-    private JButton cancelButton;
-    private EventListPanel eventListPanel;
-    
-    public AddEventModal(JFrame parent, EventListPanel eventListPanel) {
-        super(parent, "Add Event", true);
+    private final EventListPanel eventListPanel;  // The main panel to update.
+    private final JTextField nameField;           // Field for the event name.
+    private final JTextField dateTimeField;       // Field for the start time.
+    private final JTextField extraField;          // Field for extra info.
+    private final JButton addButton;              // Button to add the event.
+    private final JButton cancelButton;           // Button to cancel.
+
+    // Constructor that takes the main panel.
+    public AddEventModal(EventListPanel eventListPanel) {
+        // Use the main panel's window as the parent.
+        super((JFrame) SwingUtilities.getWindowAncestor(eventListPanel), "Add Event", true);
         this.eventListPanel = eventListPanel;
-        setLayout(new GridLayout(0, 2, 5, 5));
-        setSize(400, 300);
-        setLocationRelativeTo(parent);
+        setLayout(new GridLayout(5, 2, 5, 5)); // Use a grid layout.
         
-        // Type selection: Deadline or Meeting.
-        add(new JLabel("Event Type:"));
-        typeDropDown = new JComboBox<>(new String[] {"Deadline", "Meeting"});
-        add(typeDropDown);
-        
-        // Common field: name.
+        // Add a label and text field for the event name.
         add(new JLabel("Event Name:"));
         nameField = new JTextField();
         add(nameField);
         
-        // Common field: date & time (for Deadline: deadline, for Meeting: start time).
-        add(new JLabel("Start (yyyy-MM-dd HH:mm):"));
+        // Add a label and text field for the start time.
+        // Use the format yyyy-MM-ddTHH:mm.
+        add(new JLabel("Start DateTime (yyyy-MM-ddTHH:mm):"));
         dateTimeField = new JTextField();
         add(dateTimeField);
         
-        // Meeting-specific fields.
-        add(new JLabel("End (yyyy-MM-dd HH:mm):"));
-        endTimeField = new JTextField();
-        add(endTimeField);
+        // Add a label and text field for extra information
+        add(new JLabel("Extra (Meeting End DateTime or Deadline info):"));
+        extraField = new JTextField();
+        add(extraField);
         
-        add(new JLabel("Location:"));
-        locationField = new JTextField();
-        add(locationField);
-        
-        // Buttons.
+        // Add the "Add" button and set its action
         addButton = new JButton("Add");
-        cancelButton = new JButton("Cancel");
+        addButton.addActionListener((ActionEvent e) -> addEvent());
         add(addButton);
+        
+        // Add the "Cancel" button and set its action
+        cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener((ActionEvent e) -> dispose());
         add(cancelButton);
         
-        // Listeners.
-        addButton.addActionListener(e -> addEvent());
-        cancelButton.addActionListener(e -> dispose());
-        
-        // Hide meeting-specific fields if Deadline is selected.
-        typeDropDown.addActionListener(e -> {
-            boolean isMeeting = typeDropDown.getSelectedItem().equals("Meeting");
-            endTimeField.setEnabled(isMeeting);
-            locationField.setEnabled(isMeeting);
-        });
+        pack();
+        setLocationRelativeTo(null); // Center the dialog.
+        setVisible(true);            // Show the dialog.
     }
     
+    // This method processes the event addition
     private void addEvent() {
+        String name = nameField.getText().trim();
+        String dateTimeStr = dateTimeField.getText().trim();
+        String extra = extraField.getText().trim();
+        
+        // Parse the start time using ISO_LOCAL_DATE_TIME format
+        LocalDateTime startDateTime;
         try {
-            String type = (String) typeDropDown.getSelectedItem();
-            String name = nameField.getText().trim();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-            LocalDateTime start = LocalDateTime.parse(dateTimeField.getText().trim(), formatter);
-            
-            if (type.equals("Deadline")) {
-                Deadline deadline = new Deadline(name, start);
-                eventListPanel.addEvent(deadline);
-            } else {
-                // Meeting: get end time and location.
-                LocalDateTime end = LocalDateTime.parse(endTimeField.getText().trim(), formatter);
-                String location = locationField.getText().trim();
-                Meeting meeting = new Meeting(name, start, end, location);
-                eventListPanel.addEvent(meeting);
-            }
-            dispose();
+            startDateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid DateTime format!");
+            return;
         }
+        
+        // Try to parse the extra field.
+        // If it can be parsed as a date time, create a meeting
+        try {
+            LocalDateTime extraDateTime = LocalDateTime.parse(extra, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            // Create a meeting with a temporary location "TBD"
+            Meeting meeting = new Meeting(name, startDateTime, extraDateTime, "TBD");
+            eventListPanel.addEvent(meeting);
+        } catch (Exception ex) {
+            // If parsing fails, create a deadline
+            Deadline deadline = new Deadline(name, startDateTime);
+            eventListPanel.addEvent(deadline);
+        }
+        
+        // Close the dialog
+        dispose();
     }
 }

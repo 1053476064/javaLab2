@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "EventPlanner",
+            "request": "launch",
+            "mainClass": "EventPlanner",
+            "projectName": "javaLab2_51a771b2"
+        },
+        {
+            "type": "java",
+            "name": "EventTester",
+            "request": "launch",
+            "mainClass": "EventTester",
+            "projectName": "javaLab2_51a771b2"
+        },
+        {
+            "type": "java",
+            "name": "Debug EventTester",
+            "request": "launch",
+            "mainClass": "EventTester",
+            "projectName": "EventCalendar"
+        }
+    ]
+}
